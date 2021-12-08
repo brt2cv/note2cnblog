@@ -41,14 +41,14 @@ class NoteRepoMgr:
         self.git.add(self.path_cache)
 
         # git commit, 若无需提交，则Ctrl+C终止程序即可
-        # commit_message = "更新programming"
-        commit_message = input("Input commit message [回车默认提交]: ")
+        commit_message = "更新programming"
+        # commit_message = input("Input commit message [回车默认提交]: ")
         self.git.commit(commit_message)
 
     def push(self):
-        commit_message = input("请确认当前仓库已经pull至最新版本 [Y/n]: ")
-        if commit_message != "Y":
-            return
+        # commit_message = input("请确认当前仓库已经pull至最新版本 [Y/n]: ")
+        # if commit_message != "Y":
+        #     return
         update_files = self.load_cache()
         # 读取
         mod_, del_, new_, mov_ = [set(i) for i in update_files]
@@ -96,9 +96,9 @@ class NoteRepoMgr:
         from pprint import pprint
         keys = ["修改项", "删除项", "增加项", "move_from", "move_to"]
         pprint(dict(zip(keys, list_items)))
-        commit_message = input("确认是否保存上传 [<y>/n]: ")
-        if commit_message != "y":
-            raise AssertionError("终止执行")
+        # commit_message = input("确认是否保存上传 [<y>/n]: ")
+        # if commit_message != "y":
+        #     raise AssertionError("终止执行")
 
         with open(self.path_cache, "w") as fp:
             json.dump(update_files, fp, ensure_ascii=False, indent=2)
