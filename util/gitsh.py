@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2021-12-02
+# @Date    : 2021-12-08
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 1.0.7
+# @Version : 1.0.8
 
 import os
 
@@ -29,19 +29,19 @@ def _popen(str_cmd):
 
 def pcall(str_cmd, block=True):
     ''' return a list stdout-lines '''
-    if block:
-        if __PY_VERSION_MINOR == 5:
-            p = subprocess.run(str_cmd,
-                                shell=True,
-                                check=True,
-                                stdout=subprocess.PIPE)
-        else:
-            p = subprocess.check_call(str_cmd,
-                                shell=True)
+    if __PY_VERSION_MINOR >= 5 and block:
+        p = subprocess.run(str_cmd,
+                            shell=True,
+                            check=True,
+                            stdout=subprocess.PIPE)
+        # if __PY_VERSION_MINOR < 5:
+        # return_code = subprocess.check_call(str_cmd,
+        #                                     shell=True)
         stdout = p.stdout
     else:
         p = _popen(str_cmd)
-        stdout = p.communicate()  # timeout=timeout
+        # p.wait(timeout=timeout)
+        stdout, stderr = p.communicate()  # timeout=timeout
     # rc = p.returncode
     return stdout.decode().splitlines()
 
