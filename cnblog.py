@@ -49,7 +49,8 @@ class CnblogManager:
         self.mime = None
 
         self.md = MarkdownParser()
-        self.db = ArticlesDB(os.path.join(self.get_blogdir(), self.get_dbpath()))
+        path_db = os.path.join(self.get_blogdir(), self.get_dbpath())
+        self.db = ArticlesDB(os.path.expanduser(path_db))
         # self.md.set_ignore_websites(["cnblogs.com/blog/" + self.dict_conf["user_id"]])
 
     def check_repo(self):

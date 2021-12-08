@@ -25,7 +25,7 @@ class NoteRepoMgr:
 
     def __init__(self, cnblog):
         self.cnblog_mgr = cnblog
-        dir_blog = cnblog.get_blogdir()
+        dir_blog = os.path.expanduser(cnblog.get_blogdir())
         self.path_cache = os.path.join(dir_blog,
                                        cnblog.get_cachapath())
         self.path_db = os.path.join(dir_blog, cnblog.get_dbpath())

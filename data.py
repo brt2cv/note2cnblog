@@ -22,7 +22,6 @@ class ArticlesDB:
         self.conn.commit()
 
     def db_connect(self, path_db=":memory"):
-        print(">>>", path_db)
         self.conn = sqlite3.connect(path_db)  # 若不存在，则创建新数据库
         self.cursor = self.conn.cursor()  # database cursor
 
