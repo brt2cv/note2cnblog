@@ -141,7 +141,7 @@ class GitRepo:
         if not message:
             from datetime import datetime
             message = datetime.now().strftime('%a, %b %d %H:%M')
-        pcall(f'git commit -m "{message}"')
+        pcall('git commit -m "{}"'.format(message))
 
     @switch_dir
     def is_status_mixed(self):
@@ -156,7 +156,7 @@ class GitRepo:
     def files(self, filter_ext=None):
         str_cmd = "git rev-list --objects --all | awk '{print $2}'"
         if filter_ext:
-            str_cmd += f" | grep '{filter_ext}'"
+            str_cmd += " | grep '{}'".format(filter_ext)
         list_lines = pcall(str_cmd)
         return list_lines
 

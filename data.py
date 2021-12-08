@@ -17,7 +17,7 @@ class ArticlesDB:
         self.conn.close()
 
     def execute_scripts(self, SQL):
-        print(f"SQL:\n\t{SQL}")
+        print("SQL:\n\t{}".format(SQL))
         self.cursor.execute(SQL)
         self.conn.commit()
 
@@ -27,7 +27,7 @@ class ArticlesDB:
         self.cursor = self.conn.cursor()  # database cursor
 
     def drop_table(self):
-        self.cursor.execute(f"DROP TABLE IF EXISTS {self.tb_name}; ")
+        self.cursor.execute("DROP TABLE IF EXISTS {}; ".format(self.tb_name))
 
     def create_table(self):
         SQL = """
@@ -44,35 +44,35 @@ class ArticlesDB:
 
     def del_item(self, path=None, postid=None):
         if path:
-            SQL = f"DELETE FROM {self.tb_name} WHERE filepath='{path}'; "
+            SQL = "DELETE FROM {} WHERE filepath='{}'; ".format(self.tb_name,path)
         elif postid:
-            SQL = f"DELETE FROM {self.tb_name} WHERE postid='{postid}'; "
+            SQL = "DELETE FROM {} WHERE postid='{}'; ".format(self.tb_name,postid)
         self.execute_scripts(SQL)
 
     def insert_item(self, path_file, postid, title, mdate, tags: list, weight=5):
         if weight is None:
             weight = 5
-        SQL = f"INSERT INTO {self.tb_name} VALUES ('{path_file}', '{postid}', '{title}', '{mdate}', \"{tags}\", {weight}); "
+        SQL = "INSERT INTO {} VALUES ('{}', '{}', '{}', '{}', \"{}\", {}); ".format(self.tb_name,path_file,postid,title,mdate,tags,weight)
         self.execute_scripts(SQL)
 
     def update_item(self, path_file, postid, title, mdate, tags: list, weight=5):
-        # SQL = f"UPDATE {} SET {}='{}' WHERE md5='{}'; "
+        # SQL = "UPDATE {} SET {}='{}' WHERE md5='{}'; ".format()
         self.del_item(path=path_file)
         self.insert_item(path_file, postid, title, mdate, tags, weight)
 
     def select(self):
-        SQL = f"SELECT * FROM {self.tb_name}; "
+        SQL = "SELECT * FROM {}; ".format(self.tb_name)
         tuple_item = self.cursor.execute(SQL).fetchall()
         return tuple_item
 
     def get_postid(self, path):
-        SQL = f"select postid from {self.tb_name} where filepath == '{path}'; "
+        SQL = "select postid from {} where filepath == '{}'; ".format(self.tb_name,path)
         tuple_item = self.cursor.execute(SQL).fetchall()
         if tuple_item:
             return tuple_item[0][0]
 
     def update_filepath(self, path_from, path_to):
-        SQL = f"UPDATE {self.tb_name} SET filepath='{path_to}' WHERE filepath ='{path_from}'; "
+        SQL = "UPDATE {} SET filepath='{}' WHERE filepath ='{}'; ".format(self.tb_name,path_to,path_from)
         self.execute_scripts(SQL)
 
 

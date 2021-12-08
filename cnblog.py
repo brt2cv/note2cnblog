@@ -6,13 +6,12 @@
 
 import os
 import shutil
-from pathlib import Path
 import json
 import xmlrpc.client
 from time import sleep
 
-from md_parser import MarkdownParser
-from data import ArticlesDB
+from .md_parser import MarkdownParser
+from .data import ArticlesDB
 
 try:
     from utils.log import getLogger
@@ -27,6 +26,20 @@ if TESTING:
     print("\n" + "#"*49)
     print("注意：当前为模拟上传环境")
     print("#"*49 + "\n")
+
+
+def get_categories(path_md, key_dirname):
+    assert os.path.isabs(path_md)
+    # assert path_md.find(os.path.abspath(self.db_mgr.repo_dir)) == 0
+
+    # 通过相对路径
+    # path_dir = Path(os.path.dirname(path_md)).as_posix()
+    # path_parts = Path(os.path.dirname(path_md)).parts  # tuple
+    path_parts = os.path.dirname(path_md).split(os.sep)
+
+    assert key_dirname in path_parts, "Error: {} not in {}".format(key_dirname, path_parts)
+    index = path_parts.index(key_dirname)
+    return list(path_parts[index +1:])
 
 
 class PostidNotUnique(Exception):
@@ -108,7 +121,7 @@ class CnblogManager:
         try:
             type_ = self.mime[suffix]
         except KeyError:
-            logger.error(f"未定义的扩展名类型【{suffix}】，使用默认值'image/jpeg'")
+            logger.error("未定义的扩展名类型【{}】，使用默认值'image/jpeg'".format(suffix))
             type_ = "image/jpeg"
 
         with open(path_img, 'rb') as fp:
@@ -134,7 +147,7 @@ class CnblogManager:
                         self.dict_conf["username"],
                         self.dict_conf["password"],
                         struct_post, True)
-        print(f">> 完成blog的上传:【{postid}】")
+        print(">> 完成blog的上传:【{}】".format(postid))
         self.db.insert_item(self.get_relpath(self.md.file_path),
                                 str(postid),
                                 self.md.make_title(),
@@ -149,7 +162,7 @@ class CnblogManager:
                         self.dict_conf["username"],
                         self.dict_conf["password"],
                         struct_post, True)
-        print(f">> 完成blog的更新:【{status}】")
+        print(">> 完成blog的更新:【{}】".format(status))
         self.db.update_item(self.get_relpath(self.md.file_path),
                                 str(postid),
                                 self.md.make_title(),
@@ -165,16 +178,8 @@ class CnblogManager:
         assert os.path.isabs(path_md)
         assert path_md.find(os.path.abspath(self.db.repo_dir)) == 0
 
-        # 通过相对路径
-        def get_categories(key_dirname):
-            # path_dir = Path(os.path.dirname(path_md)).as_posix()
-            path_parts = Path(os.path.dirname(path_md)).parts  # tuple
-            assert key_dirname in path_parts, f"Error: {key_dirname} not in {path_parts}"
-            index = path_parts.index(key_dirname)
-            return list(path_parts[index +1:])
-
         # categories = get_categories(article_dirname if self._is_article(path_md) else essay_dirname)
-        categories = get_categories(self.db.data["dir_essay"])
+        categories = get_categories(path_md, self.db.data["dir_essay"])
         if self.md.metadata["categories"] != categories:
             self.md.metadata["categories"] = categories
             self.md.update_meta()
@@ -189,27 +194,30 @@ class CnblogManager:
         # 上传图片
         dict_images_relpath = self.md.get_images("local", force_abspath=False)
         if not has_dir:
-            assert not dict_images_relpath, f"Markdown文档引用的图像未存储在同名文件夹下: {dict_images_relpath}"
+            assert not dict_images_relpath, "Markdown文档引用的图像未存储在同名文件夹下: {}".format(dict_images_relpath)
             self.md.unlock_text()
             return False
 
         # 删除未被引用的（多余）图像
         list_dir = os.listdir(dir_img)
         dict_images_backup = self.md.get_images("backup", force_abspath=False)
-        dict_images_local = {**dict_images_relpath, **dict_images_backup}
+        # dict_images_local = {**dict_images_relpath, **dict_images_backup}
+        dict_images_local = dict_images_relpath.copy()
+        dict_images_local.update(dict_images_backup)
+
         if not dict_images_local:
             self.md.unlock_text()
-            logger.warning(f"Markdown文档并未引用本地图像，同名dir内容如下: {list_dir}")
+            logger.warning("Markdown文档并未引用本地图像，同名dir内容如下: {}".format(list_dir))
             if input("是否清除同名文件夹？ [Y/n]: ").lower() != "n":
                 shutil.rmtree(dir_img)
-                logger.warning(f"已清除未引用文件夹:【{dir_img}】")
+                logger.warning("已清除未引用文件夹:【{dir_img}】".format())
             return False
 
         set_redundant = set(list_dir) - {os.path.basename(i) for i in dict_images_local.values()}
         str_redundant = '\n'.join(set_redundant)
-        if set_redundant and input(f"""################ 是否删除多余图片文件：
-{str_redundant}
-################ [Y/n]:""").lower() != "n":
+        if set_redundant and input("""################ 是否删除多余图片文件：
+{}
+################ [Y/n]:""".format(str_redundant)).lower() != "n":
             for file in set_redundant:
                 os.remove(os.path.join(dir_img, file))
 
@@ -226,7 +234,7 @@ class CnblogManager:
         # if dict_images_relpath:
         for line, url_local in dict_images_relpath.items():
             # path_rel = os.path.relpath(url_local, self.md.file_name)
-            self.md.modify_text(line, f"{text_lines[line].rstrip()} <!-- {url_local} -->")
+            self.md.modify_text(line, "{} <!-- {} -->".format(text_lines[line].rstrip(), url_local))
         return True
 
     def post_blog(self, path_md, postid=None):
@@ -264,12 +272,12 @@ class CnblogManager:
                     err_type = str(e).split(':', 1)[0]
                     if err_type == "<Fault 500":
                         # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
-                        print(f"cnblog限制了发送频率，请静候{TIME_FOR_FREQUENCE_LIMIT}s\n程序正在后台运行，请勿退出...")
+                        print("cnblog限制了发送频率，请静候{}s\n程序正在后台运行，请勿退出...".format(TIME_FOR_FREQUENCE_LIMIT))
                         sleep(TIME_FOR_FREQUENCE_LIMIT)
                     elif err_type == "<Fault 0":
                         raise Exception("数据格式错误，文档中是否存在'<xxx>'等类似标签字符？")
                     else:
-                        raise Exception(f"未知的上传问题: {e}")
+                        raise Exception("未知的上传问题: {}".format(e))
                 else:
                     break
 
@@ -279,8 +287,8 @@ class CnblogManager:
 
         postid = title_or_postid if title_or_postid.isdecimal() else self.db.get_postid(title=title_or_postid)
         if not postid:
-            logger.error(f"本地数据库未存储blog: 【{title_or_postid}】，\
-但不确定博客园服务器状态。如有必要，请指定postid值，重新查询。")
+            logger.error("本地数据库未存储blog: 【{}】，\
+但不确定博客园服务器状态。如有必要，请指定postid值，重新查询。".format(title_or_postid))
             return
 
         dict_data = self.cnblog_server.metaWeblog.getPost(
@@ -291,10 +299,10 @@ class CnblogManager:
         dir_download = "cnblog_bak"
         if not os.path.exists(dir_download):
             os.makedirs(dir_download)
-        path_save = f"{dir_download}/{postid}.md"
+        path_save = "{}/{}.md".format(dir_download, postid)
         with open(path_save, "w", encoding="utf8") as fp:
             fp.write(dict_data['description'])
-        print(f">> 已下载blog:【{path_save}】")
+        print(">> 已下载blog:【{}】".format(path_save))
 
     def delete_blog(self, path_file):
         """ postid: str_id or path_file """
@@ -310,9 +318,9 @@ class CnblogManager:
         except xmlrpc.client.Fault:
             # logger.error(e)  # <Fault 500: 'can not be deleted！'>
             title = self.db.get_title_by_postid(postid)
-            logger.error(f"Web操作失败，请手动删除博客【{title}】")
+            logger.error("Web操作失败，请手动删除博客【{}】".format(title))
         else:
-            print(f">> 已删除blog:【{postid}】")
+            print(">> 已删除blog:【{}】".format(postid))
 
         self.db.del_item(path_file)
 

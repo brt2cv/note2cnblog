@@ -9,7 +9,7 @@ import platform
 import os.path
 import shutil
 
-from util.gitsh import GitRepo
+from .util.gitsh import GitRepo
 
 def getopt():
     import argparse
@@ -91,7 +91,7 @@ class NoteRepoMgr:
         import itertools
         for a, b in itertools.permutations(list_items, 2):
             c = a & b
-            assert not c, f"存在交叉文件:{c}"
+            assert not c, "存在交叉文件:{}".format(c)
 
         from pprint import pprint
         keys = ["修改项", "删除项", "增加项", "move_from", "move_to"]
@@ -151,7 +151,7 @@ def html2markdown(url, save_dir):
     path_save = os.path.join(save_dir, title + ".md")
     with open(path_save, "w", encoding="utf8") as fp:
         fp.write(md)
-    print(f"[+] 已存储Markdown至【{path_save}】")
+    print("[+] 已存储Markdown至【{}】".format(path_save))
 
 
 if __name__ == "__main__":
