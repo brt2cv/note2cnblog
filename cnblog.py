@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2021-12-03
+# @Date    : 2021-12-19
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.2.0
+# @Version : 0.2.2
 
 import os
 import shutil
@@ -27,6 +27,8 @@ if TESTING:
     print("注意：当前为模拟上传环境")
     print("#"*49 + "\n")
 
+def path_as_unix(path):
+    return path.replace("\\", "/")
 
 def get_categories(path_md, key_dirname):
     assert os.path.isabs(path_md)
@@ -76,7 +78,7 @@ class CnblogManager:
         if isinstance(repo_dir, dict):
             from platform import system
             repo_dir = repo_dir[system()]
-        return repo_dir
+        return os.path.expanduser(repo_dir)
 
     def get_cachapath(self):
         return self.dict_conf.get("cache")
@@ -85,10 +87,10 @@ class CnblogManager:
         return self.dict_conf.get("db_file")
 
     def get_abspath(self, path_rel):
-        return os.path.join(self.dir_blog, path_rel)
+        return path_as_unix(os.path.join(self.dir_blog, path_rel))
 
     def get_relpath(self, path_abs):
-        return os.path.relpath(path_abs, self.dir_blog)
+        return path_as_unix(os.path.relpath(path_abs, self.dir_blog))
 
     def load_cnblog_conf(self, path_conf):
         with open(path_conf, "r") as fp:
@@ -262,7 +264,7 @@ class CnblogManager:
         }
 
         if not postid:
-            postid = self.db.get_postid(path=self.md.file_path)
+            postid = self.db.get_postid(path=path_md)
         if postid:
             self._repost_blog(postid, struct_post)
         else:
@@ -351,3 +353,11 @@ class CnblogManager:
                         self.dict_conf["password"],
                         num)
         return recent_post
+
+
+if __name__ == "__main__":
+    # cd .. && python -m cnblog.cnblog
+    path_cnblog_account = ".cnblog.json"
+    cnblog = CnblogManager(path_cnblog_account)
+    postid = cnblog.db.get_postid(path="3-syntax/37-golang/learn_start.md")
+    print(">>>", postid)

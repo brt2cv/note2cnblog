@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-# @Date    : 2021-12-03
+# @Date    : 2021-12-19
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.2.1
+# @Version : 0.2.2
 
 import json
-import platform
 import os.path
-import shutil
 
 from .util.gitsh import GitRepo
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2021-11-22
+# @Date    : 2021-12-19
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.3
+# @Version : 0.1.5
 
 import os.path
 import re
@@ -41,14 +41,18 @@ class MarkdownParser:
         self.file_path = ""
         self.__text_lines = []
         self.__text_lock = False
+        # Front Matter
         self.metadata = {
             "title": "",
             "description": "",
             "date": None,
-            "weight": 5,
             "tags": [],
             "categories": [],
-            "keywords": []
+            "series": [],
+            "keywords": [],
+            "weight": 5,
+            "toc": True,
+            "draft": True
         }
         self.check_list = {
             "index_H1": None,
@@ -123,8 +127,13 @@ class MarkdownParser:
                     edit_meta = False
                     self.meta_range[1] = index
                 else:
-                    key, value = line.split("=")
-                    self.metadata[key.strip()] = eval(value)
+                    key, value = [i.strip() for i in line.split("=")]
+                    if value == "true":
+                        self.metadata[key] = True
+                    elif value == "false":
+                        self.metadata[key] = False
+                    else:
+                        self.metadata[key] = eval(value)
                 continue
 
             if line.startswith("+++"):
@@ -196,9 +205,9 @@ class MarkdownParser:
                 self.modify_text(line_idx, " "*num_space + "![]({})" % url_new)
 
     def make_title(self):
-        blog_title = self.metadata["description"]  # 起一个吸引人的标题
-        if blog_title:
-            return blog_title
+        # blog_title = self.metadata["description"]  # 起一个吸引人的标题
+        # if blog_title:
+        #     return blog_title
 
         filename_as_title = False
         blog_title = self.metadata["title"]
