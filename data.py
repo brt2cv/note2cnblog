@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# @Date    : 2021-12-03
+# @Date    : 2021-12-20
 # @Author  : Bright (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
 
@@ -56,7 +56,7 @@ class ArticlesDB:
 
     def update_item(self, path_file, postid, title, mdate, tags: list, weight=5):
         # SQL = "UPDATE {} SET {}='{}' WHERE md5='{}'; ".format()
-        self.del_item(path=path_file)
+        self.del_item(postid=postid)
         self.insert_item(path_file, postid, title, mdate, tags, weight)
 
     def select(self):
@@ -64,9 +64,12 @@ class ArticlesDB:
         tuple_item = self.cursor.execute(SQL).fetchall()
         return tuple_item
 
-    def get_postid(self, path):
-        SQL = "select postid from {} where filepath == '{}'; ".format(self.tb_name,path)
+    def get_postid(self, path, title=None):
+        SQL = "select postid from {} where filepath == '{}'; ".format(self.tb_name, path)
         tuple_item = self.cursor.execute(SQL).fetchall()
+        if not tuple_item and title is not None:
+            SQL = "select postid from {} where title == '{}'; ".format(self.tb_name, title)
+            tuple_item = self.cursor.execute(SQL).fetchall()
         if tuple_item:
             return tuple_item[0][0]
 
@@ -74,28 +77,6 @@ class ArticlesDB:
         SQL = "UPDATE {} SET filepath='{}' WHERE filepath ='{}'; ".format(self.tb_name,path_to,path_from)
         self.execute_scripts(SQL)
 
-
-def yaml2db(path_yaml="database.yml", path_db="test.db"):
-    import yaml
-
-    with open(path_yaml, "r", encoding="utf8") as fp:
-        # self.data = json.load(fp)
-        data = yaml.unsafe_load(fp)
-
-    db = CnblogDB(path_db)
-
-    def get_items(dict_, prefix):
-        for subdir, subdict in dict_.items():
-            prefix_next = prefix + [subdir]
-            if "title" in subdict:
-                path = "/".join(prefix_next)
-                db.insert_item(path, subdict.get("postid"), subdict.get("title"),
-                    subdict.get("date"), subdict.get("tags"), subdict.get("weight"))
-            else:
-                get_items(subdict, prefix_next)
-
-    get_items(data["structure"]["programming"], [])
-    print("Done")
 
 if __name__ == "__main__":
     db = ArticlesDB("./test.db")

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2021-12-19
+# @Date    : 2021-12-20
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.2.2
+# @Version : 0.2.3
 
 import os
 import shutil
@@ -264,7 +264,7 @@ class CnblogManager:
         }
 
         if not postid:
-            postid = self.db.get_postid(path=path_md)
+            postid = self.db.get_postid(path_md, blog_title)
         if postid:
             self._repost_blog(postid, struct_post)
         else:
