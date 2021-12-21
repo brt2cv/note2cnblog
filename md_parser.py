@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2021-12-19
+# @Date    : 2021-12-21
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.5
+# @Version : 0.1.6
 
 import os.path
 import re
@@ -127,7 +127,7 @@ class MarkdownParser:
                     edit_meta = False
                     self.meta_range[1] = index
                 else:
-                    key, value = [i.strip() for i in line.split("=")]
+                    key, value = [i.strip() for i in line.split("=", maxsplit=1)]
                     if value == "true":
                         self.metadata[key] = True
                     elif value == "false":
