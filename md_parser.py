@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# @Date    : 2021-12-21
+# @Date    : 2022-01-03
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.1.6
+# @Version : 0.1.7
 
 import os.path
 import re
@@ -117,6 +117,14 @@ class MarkdownParser:
 
         self._parse_metadata()
 
+    def save_file(self):
+        self.overwrite()
+
+    def overwrite(self):
+        with open(self.file_path, "w", encoding="utf8") as fp:
+            fp.writelines(self.get_text())
+        print("Markdown文件已保存【{}】".format(self.file_path))
+
     def _parse_metadata(self):
         self.meta_range = [None, None]
 
@@ -202,7 +210,7 @@ class MarkdownParser:
             url_new = callback(url_img)
             if url_new:
                 num_space = self.get_text()[line_idx].find("!")
-                self.modify_text(line_idx, " "*num_space + "![]({})" % url_new)
+                self.modify_text(line_idx, " "*num_space + "![]({})".format(url_new))
 
     def make_title(self):
         # blog_title = self.metadata["description"]  # 起一个吸引人的标题

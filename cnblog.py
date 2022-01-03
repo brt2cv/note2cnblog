@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-# @Date    : 2021-12-20
+# @Date    : 2022-01-03
 # @Author  : Bright Li (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
-# @Version : 0.2.3
+# @Version : 0.2.4
 
 import os
 import shutil
@@ -19,13 +19,8 @@ except ImportError:
     from logging import getLogger
 logger = getLogger()
 
-
+UPLOAD_LOCAL_IMAGE = True
 TIME_FOR_FREQUENCE_LIMIT = 5
-TESTING = False
-if TESTING:
-    print("\n" + "#"*49)
-    print("注意：当前为模拟上传环境")
-    print("#"*49 + "\n")
 
 def path_as_unix(path):
     return path.replace("\\", "/")
@@ -113,9 +108,6 @@ class CnblogManager:
             self.md.download_img()
 
     def _upload_img(self, path_img):
-        if TESTING:
-            return "https://img2020.cnblogs.com/blog/2039866/202005/2039866-20200525195318772-1131646535.jpg"
-
         file_name = os.path.basename(path_img)
         # from download_img_link import format_ext
         # file_name = format_ext(file_name)
@@ -127,7 +119,7 @@ class CnblogManager:
             logger.error("未定义的扩展名类型【{}】，使用默认值'image/jpeg'".format(suffix))
             type_ = "image/jpeg"
 
-        with open(path_img, 'rb') as fp:
+        with open(self.get_abspath(path_img), 'rb') as fp:
             file = {
                 "bits": fp.read(),
                 "name": file_name,
@@ -138,10 +130,12 @@ class CnblogManager:
                     self.dict_conf["username"],
                     self.dict_conf["password"],
                     file)
+        # print(">>>", url_new["url"])
         return url_new["url"]
 
     def _load_mime(self):
-        with open("mime.json", "r") as fp:
+        path_mime = os.path.join(os.path.dirname(__file__), "mime.json")
+        with open(path_mime, "r") as fp:
             self.mime = json.load(fp)
 
     def _new_blog(self, struct_post):
@@ -208,38 +202,43 @@ class CnblogManager:
             return False  # 无需更新
 
     def _rebuild_images(self, path_md):
-        dir_img = path_md[:-3]  # 同名文件夹
-        has_dir = os.path.exists(dir_img)
+        dict_images_relpath = self.md.get_images("local", force_abspath=False)
+        if not dict_images_relpath:
+            return False
 
         # 上传图片
-        dict_images_relpath = self.md.get_images("local", force_abspath=False)
-        if not has_dir:
-            assert not dict_images_relpath, "Markdown文档引用的图像未存储在同名文件夹下: {}".format(dict_images_relpath)
-            self.md.unlock_text()
-            return False
+        if self.mime is None:
+            self._load_mime()
 
-        # 删除未被引用的（多余）图像
-        list_dir = os.listdir(dir_img)
-        dict_images_backup = self.md.get_images("backup", force_abspath=False)
-        # dict_images_local = {**dict_images_relpath, **dict_images_backup}
-        dict_images_local = dict_images_relpath.copy()
-        dict_images_local.update(dict_images_backup)
+#         dir_img = path_md[:-3]  # 同名文件夹
+#         has_dir = os.path.exists(dir_img)
+#         if not has_dir:
+#             # assert not dict_images_relpath, "Markdown文档引用的图像未存储在同名文件夹下: {}".format(dict_images_relpath)
+#             self.md.unlock_text()
+#             return False
 
-        if not dict_images_local:
-            self.md.unlock_text()
-            logger.warning("Markdown文档并未引用本地图像，同名dir内容如下: {}".format(list_dir))
-            if input("是否清除同名文件夹？ [Y/n]: ").lower() != "n":
-                shutil.rmtree(dir_img)
-                logger.warning("已清除未引用文件夹:【{dir_img}】".format())
-            return False
+#         # 删除未被引用的（多余）图像
+#         list_dir = os.listdir(dir_img)
+#         dict_images_backup = self.md.get_images("backup", force_abspath=False)
+#         # dict_images_local = {**dict_images_relpath, **dict_images_backup}
+#         dict_images_local = dict_images_relpath.copy()
+#         dict_images_local.update(dict_images_backup)
 
-        set_redundant = set(list_dir) - {os.path.basename(i) for i in dict_images_local.values()}
-        str_redundant = '\n'.join(set_redundant)
-        if set_redundant and input("""################ 是否删除多余图片文件：
-{}
-################ [Y/n]:""".format(str_redundant)).lower() != "n":
-            for file in set_redundant:
-                os.remove(os.path.join(dir_img, file))
+#         # if not dict_images_local:
+#         #     self.md.unlock_text()
+#         #     logger.warning("Markdown文档并未引用本地图像，同名dir内容如下: {}".format(list_dir))
+#         #     if input("是否清除同名文件夹？ [Y/n]: ").lower() != "n":
+#         #         shutil.rmtree(dir_img)
+#         #         logger.warning("已清除未引用文件夹:【{dir_img}】".format())
+#         #     return False
+
+#         set_redundant = set(list_dir) - {os.path.basename(i) for i in dict_images_local.values()}
+#         str_redundant = '\n'.join(set_redundant)
+#         if set_redundant and input("""################ 是否删除多余图片文件：
+# {}
+# ################ [Y/n]:""".format(str_redundant)).lower() != "n":
+#             for file in set_redundant:
+#                 os.remove(os.path.join(dir_img, file))
 
         # 将图像链接地址改写为cnblog_link
         dict_images = {}
@@ -258,15 +257,11 @@ class CnblogManager:
         return True
 
     def post_blog(self, path_md, postid=None):
-        # if self.mime is None:
-        #     self._load_mime()
         self.md.load_file(self.get_abspath(path_md))
-        # # 图片的处理
-        # self._rebuild_images(path_md)
-        # # 更新category
-        # self._update_categories(path_md)
-        # # 保存修改url的Markdown
-        # self.md.overwrite()
+        # 图片的处理
+        if UPLOAD_LOCAL_IMAGE and self._rebuild_images(path_md):
+            # 保存修改url的Markdown
+            self.md.overwrite()
 
         # if self._is_article(path_md):
         #     # 貌似没有用 ??
