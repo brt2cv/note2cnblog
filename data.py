@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# @Date    : 2021-12-20
+# @Date    : 2022-01-03
 # @Author  : Bright (brt2@qq.com)
 # @Link    : https://gitee.com/brt2
 
@@ -59,10 +59,10 @@ class ArticlesDB:
         self.del_item(postid=postid)
         self.insert_item(path_file, postid, title, mdate, tags, weight)
 
-    def select(self):
-        SQL = "SELECT * FROM {}; ".format(self.tb_name)
+    def select_by_postid(self, postid):
+        SQL = "SELECT * FROM {} where postid == '{}'; ".format(self.tb_name, postid)
         tuple_item = self.cursor.execute(SQL).fetchall()
-        return tuple_item
+        return tuple_item[0]
 
     def get_postid(self, path, title=None):
         SQL = "select postid from {} where filepath == '{}'; ".format(self.tb_name, path)

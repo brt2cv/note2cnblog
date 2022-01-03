@@ -320,8 +320,8 @@ class CnblogManager:
                     True)
         except xmlrpc.client.Fault:
             # logger.error(e)  # <Fault 500: 'can not be deleted！'>
-            title = self.db.get_title_by_postid(postid)
-            logger.error("Web操作失败，请手动删除博客【{}】".format(title))
+            tuple_item = self.db.select_by_postid(postid)
+            logger.error("Web操作失败，请手动删除博客【{}】".format(tuple_item))
         else:
             print(">> 已删除blog:【{}】".format(postid))
 
