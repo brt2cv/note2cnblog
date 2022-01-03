@@ -158,6 +158,23 @@ class CnblogManager:
                                 self.md.metadata.get("tags"),
                                 self.md.metadata.get("weight"))
 
+    def _post_new_bolg(self, struct_post):
+        while True:
+            try:
+                self._new_blog(struct_post)
+            except xmlrpc.client.Fault as e:
+                err_type = str(e).split(':', 1)[0]
+                if err_type == "<Fault 500":
+                    # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
+                    print("cnblog限制了发送频率，请静候{}s\n程序正在后台运行，请勿退出...".format(TIME_FOR_FREQUENCE_LIMIT))
+                    sleep(TIME_FOR_FREQUENCE_LIMIT)
+                elif err_type == "<Fault 0":
+                    raise Exception("数据格式错误，文档中是否存在'<xxx>'等类似标签字符？")
+                else:
+                    raise Exception("未知的上传问题: {}".format(e))
+            else:
+                break
+
     def _repost_blog(self, postid, struct_post):
         """ 重新发布 """
         status = self.cnblog_server.metaWeblog.editPost(
@@ -266,23 +283,17 @@ class CnblogManager:
         if not postid:
             postid = self.db.get_postid(path_md, blog_title)
         if postid:
-            self._repost_blog(postid, struct_post)
-        else:
-            while True:
-                try:
-                    self._new_blog(struct_post)
-                except xmlrpc.client.Fault as e:
-                    err_type = str(e).split(':', 1)[0]
-                    if err_type == "<Fault 500":
-                        # <Fault 500: '30秒内只能发布1篇博文，请稍候发布，联系邮箱：contact@cnblogs.com'>
-                        print("cnblog限制了发送频率，请静候{}s\n程序正在后台运行，请勿退出...".format(TIME_FOR_FREQUENCE_LIMIT))
-                        sleep(TIME_FOR_FREQUENCE_LIMIT)
-                    elif err_type == "<Fault 0":
-                        raise Exception("数据格式错误，文档中是否存在'<xxx>'等类似标签字符？")
-                    else:
-                        raise Exception("未知的上传问题: {}".format(e))
+            try:
+                self._repost_blog(postid, struct_post)
+            except xmlrpc.client.Fault as e:
+                err_type = str(e).split(':', 1)[0]
+                if err_type == "<Fault 0":  # <Fault 0: 'blog post does not exist'>
+                    self._post_new_bolg(struct_post)
                 else:
-                    break
+                    print("[-] Error upload: 【{}】".format(self.md.file_path))
+                    raise e
+        else:
+            self._post_new_bolg(struct_post)
 
     def download_blog(self, title_or_postid, ignore_img=True):
         if not ignore_img:
